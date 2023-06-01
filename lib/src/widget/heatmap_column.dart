@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+
 import './heatmap_container.dart';
-import '../util/date_util.dart';
-import '../util/datasets_util.dart';
 import '../data/heatmap_color_mode.dart';
+import '../util/datasets_util.dart';
+import '../util/date_util.dart';
 
 class HeatMapColumn extends StatelessWidget {
   /// The List widgets of [HeatMapContainer].
@@ -114,28 +115,20 @@ class HeatMapColumn extends StatelessWidget {
                         startDate.day - startDate.weekday % 7 + i)) ??
                     false
                 // If colorMode is ColorMode.opacity,
-                ? colorMode == ColorMode.opacity
-                    // Color the container with first value of colorsets
-                    // and set opacity value to current day's datasets key
-                    // devided by maxValue which is the maximum value of the month.
-                    ? colorsets?.values.first.withOpacity((datasets?[DateTime(
-                                startDate.year,
-                                startDate.month,
-                                startDate.day + i - (startDate.weekday % 7))] ??
-                            1) /
-                        (maxValue ?? 1))
-                    // Else if colorMode is ColorMode.Color.
-                    //
-                    // Get color value from colorsets which is filtered with DateTime value
-                    // Using DatasetsUtil.getColor()
-                    : DatasetsUtil.getColor(
-                        colorsets,
-                        datasets?[DateTime(startDate.year, startDate.month,
-                            startDate.day + i - (startDate.weekday % 7))])
+                ? getColor(
+                    colorMode,
+                    colorsets,
+                    maxValue,
+                    i,
+                    startDate,
+                    endDate,
+                    datasets,
+                    defaultColor,
+                  )
                 : null,
           ),
         ),
-        // Fill emptySpace list only if given wek doesn't have 7 days.
+  // Fill emptySpace list only if given wek doesn't have 7 days.
         emptySpace = (numDays != 7)
             ? List.generate(
                 7 - numDays,
@@ -147,10 +140,71 @@ class HeatMapColumn extends StatelessWidget {
             : [],
         super(key: key);
 
+  static getColor(ColorMode colorMode, Map<int, Color>? colorsets,
+      int? maxValue, int i, startDate, endDate, datasets, defaultColor) {
+    Color? color;
+    var cMode = colorMode;
+    if ((colorsets?.keys.length ?? 0) == 1 && colorMode == ColorMode.color) {
+      cMode = ColorMode.light;
+    }
+
+    double v = (datasets?[DateTime(startDate.year, startDate.month,
+                startDate.day + i - (startDate.weekday % 7))] ??
+            1) /
+        (maxValue ?? 1);
+    switch (cMode) {
+      case ColorMode.lightOpacity:
+      case ColorMode.light:
+        color = colorsets?.values.first;
+        var vv = 1 - (v);
+        color = vv == 1 ? null : color?.lighten(vv.clamp(0, 1) / 2.0);
+        break;
+      case ColorMode.opacity:
+        color = colorsets?.values.first.withOpacity(v);
+        break;
+      case ColorMode.color:
+        color = DatasetsUtil.getColor(
+            colorsets,
+            datasets?[DateTime(startDate.year, startDate.month,
+                startDate.day + i - (startDate.weekday % 7))]);
+        break;
+    }
+
+    if (colorMode == ColorMode.lightOpacity && v != 1) {
+      color = color?.withOpacity((.5 + v).clamp(0, 1));
+    }
+
+    return color;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: <Widget>[...dayContainers, ...emptySpace],
     );
   }
+}
+
+extension ColorExt on Color {
+  Color darken([double amount = .1]) {
+    assert(amount >= 0 && amount <= 1);
+
+    final hsl = HSLColor.fromColor(this);
+    final hslDark = hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0));
+
+    return hslDark.toColor();
+  }
+
+  Color lighten([double amount = .1]) {
+    assert(amount >= 0 && amount <= 1);
+
+    final hsl = HSLColor.fromColor(this);
+    final hslLight =
+        hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0));
+
+    return hslLight.toColor();
+  }
+
+  MaterialStateProperty<Color> get material =>
+      MaterialStateProperty.all<Color>(this);
 }

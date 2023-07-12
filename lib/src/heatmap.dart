@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import './widget/heatmap_page.dart';
-import './widget/heatmap_color_tip.dart';
+
 import './data/heatmap_color_mode.dart';
 import './util/date_util.dart';
+import './widget/heatmap_color_tip.dart';
+import './widget/heatmap_page.dart';
 
 class HeatMap extends StatefulWidget {
   /// The Date value of start day of heatmap.
@@ -51,7 +52,7 @@ class HeatMap extends StatefulWidget {
   /// Function that will be called when a block is clicked.
   ///
   /// Parameter gives clicked [DateTime] value.
-  final Function(DateTime)? onClick;
+  final Function(DateTime, int)? onClick;
 
   /// The margin value for every block.
   final EdgeInsets? margin;
@@ -67,7 +68,7 @@ class HeatMap extends StatefulWidget {
   /// Show color tip which represents the color range at the below.
   ///
   /// Default value is true.
-  final bool? showColorTip;
+  final bool? showColorLegend;
 
   /// Makes heatmap scrollable if the value is true.
   ///
@@ -87,6 +88,9 @@ class HeatMap extends StatefulWidget {
   /// The double value of [HeatMapColorTip]'s tip container's size.
   final double? colorTipSize;
 
+  /// Function that will be called to generate tooltip.
+  final String? Function(int, DateTime)? tooltipGenerator;
+
   const HeatMap({
     Key? key,
     required this.colorsets,
@@ -102,11 +106,12 @@ class HeatMap extends StatefulWidget {
     this.datasets,
     this.defaultColor,
     this.showText = false,
-    this.showColorTip = true,
+    this.showColorLegend = true,
     this.scrollable = false,
     this.colorTipHelper,
     this.colorTipCount,
     this.colorTipSize,
+    this.tooltipGenerator,
   }) : super(key: key);
 
   @override
@@ -146,10 +151,11 @@ class _HeatMap extends State<HeatMap> {
           onClick: widget.onClick,
           margin: widget.margin,
           showText: widget.showText,
+          tooltipGenerator: widget.tooltipGenerator,
         )),
 
         // Show HeatMapColorTip if showColorTip is true.
-        if (widget.showColorTip == true)
+        if (widget.showColorLegend == true)
           HeatMapColorTip(
             colorMode: widget.colorMode,
             colorsets: widget.colorsets,

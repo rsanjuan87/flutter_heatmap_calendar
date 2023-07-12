@@ -62,7 +62,7 @@ class HeatMapColumn extends StatelessWidget {
   /// Function that will be called when a block is clicked.
   ///
   /// Paratmeter gives clicked [DateTime] value.
-  final Function(DateTime)? onClick;
+  final Function(DateTime, int)? onClick;
 
   /// The integer value of the maximum value for the highest value of the month.
   final int? maxValue;
@@ -73,6 +73,9 @@ class HeatMapColumn extends StatelessWidget {
   // The number of day blocks to draw. This should be seven for all but the
   // current week.
   final int numDays;
+
+  /// Function that will be called to generate tooltip.
+  String? Function(int, DateTime)? tooltipGenerator;
 
   HeatMapColumn({
     Key? key,
@@ -91,42 +94,62 @@ class HeatMapColumn extends StatelessWidget {
     this.onClick,
     this.maxValue,
     this.showText,
+    this.tooltipGenerator,
   })  :
         // Init list.
         dayContainers = List.generate(
           numDays,
-          (i) => HeatMapContainer(
-            date: DateUtil.changeDay(startDate, i),
-            backgroundColor: defaultColor,
-            size: size,
-            fontSize: fontSize,
-            textColor: textColor,
-            borderRadius: borderRadius,
-            margin: margin,
-            onClick: onClick,
-            showText: showText,
-            // If datasets has DateTime key which is equal to this HeatMapContainer's date,
-            // we have to color the matched HeatMapContainer.
-            //
-            // If datasets is null or doesn't contains the equal DateTime value, send null.
-            selectedColor: datasets?.keys.contains(DateTime(
-                        startDate.year,
-                        startDate.month,
-                        startDate.day - startDate.weekday % 7 + i)) ??
-                    false
-                // If colorMode is ColorMode.opacity,
-                ? getColor(
-                    colorMode,
-                    colorsets,
-                    maxValue,
-                    i,
-                    startDate,
-                    endDate,
-                    datasets,
-                    defaultColor,
-                  )
-                : null,
-          ),
+          (i) {
+            var count = (datasets?[DateTime(startDate.year, startDate.month,
+                    startDate.day + i - (startDate.weekday % 7))] ??
+                0);
+            var w = HeatMapContainer(
+              date: DateUtil.changeDay(startDate, i),
+              backgroundColor: defaultColor,
+              size: size,
+              fontSize: fontSize,
+              textColor: textColor,
+              borderRadius: borderRadius,
+              margin: margin,
+              onClick: onClick == null
+                  ? null
+                  : (d) {
+                      onClick.call(d, count);
+                    },
+              showText: showText,
+              // If datasets has DateTime key which is equal to this HeatMapContainer's date,
+              // we have to color the matched HeatMapContainer.
+              //
+              // If datasets is null or doesn't contains the equal DateTime value, send null.
+              selectedColor:
+                  // datasets?.keys.contains(DateTime(
+                  //             startDate.year,
+                  //             startDate.month,
+                  //             startDate.day - startDate.weekday % 7 + i)) ??
+                  //         false
+                  count != 0
+                      // If colorMode is ColorMode.opacity,
+                      ? getColor(
+                          colorMode,
+                          colorsets,
+                          maxValue,
+                          i,
+                          startDate,
+                          endDate,
+                          datasets,
+                          defaultColor,
+                        )
+                      : null,
+            );
+            String? tooltipText =
+                tooltipGenerator?.call(count, startDate.add(Duration(days: i)));
+            return (tooltipText == null)
+                ? w
+                : Tooltip(
+                    message: tooltipText,
+                    child: w,
+                  );
+          },
         ),
   // Fill emptySpace list only if given wek doesn't have 7 days.
         emptySpace = (numDays != 7)

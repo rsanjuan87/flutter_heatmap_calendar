@@ -1,12 +1,13 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import './heatmap_month_text.dart';
+
 import './heatmap_column.dart';
+import './heatmap_month_text.dart';
+import './heatmap_week_text.dart';
 import '../data/heatmap_color_mode.dart';
 import '../util/datasets_util.dart';
 import '../util/date_util.dart';
-import './heatmap_week_text.dart';
 
 class HeatMapPage extends StatelessWidget {
   /// List value of every sunday's month information.
@@ -71,9 +72,12 @@ class HeatMapPage extends StatelessWidget {
   /// Function that will be called when a block is clicked.
   ///
   /// Paratmeter gives clicked [DateTime] value.
-  final Function(DateTime)? onClick;
+  final Function(DateTime, int)? onClick;
 
   final bool? showText;
+
+  /// Function that will be called to generate tooltip.
+  String? Function(int, DateTime)? tooltipGenerator;
 
   HeatMapPage({
     Key? key,
@@ -90,6 +94,7 @@ class HeatMapPage extends StatelessWidget {
     this.onClick,
     this.margin,
     this.showText,
+    this.tooltipGenerator,
   })  : _dateDifferent = endDate.difference(startDate).inDays,
         maxValue = DatasetsUtil.getMaxValue(datasets),
         super(key: key);
@@ -130,6 +135,7 @@ class HeatMapPage extends StatelessWidget {
         onClick: onClick,
         datasets: datasets,
         showText: showText,
+        tooltipGenerator: tooltipGenerator,
       ));
 
       // also add first day's month information to _firstDayInfos list.

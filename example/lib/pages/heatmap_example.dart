@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_heatmap_calendar/flutter_heatmap_calendar.dart';
 
 class HeatMapExample extends StatefulWidget {
@@ -70,9 +70,10 @@ class _HeatMapExample extends State<HeatMapExample> {
                     11: Colors.indigo,
                     13: Colors.purple,
                   },
-                  onClick: (value) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(value.toString())));
+                  onClick: (date, count) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(
+                            '${date.toString().substring(0, 10)} ${count}')));
                   },
                 ),
               ),
